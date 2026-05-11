@@ -8,6 +8,10 @@ on:
     branches:
       - main
     types: [opened, synchronize]
+
+permissions:
+  contents: write
+
 jobs:
   deployment_pipeline:
     runs-on: ubuntu-latest
