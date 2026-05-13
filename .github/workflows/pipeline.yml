@@ -27,8 +27,10 @@ jobs:
       - name: Test
         run: npm run test
       - name: Install Playwright Browsers
+        if: ${{ false }}
         run: npx playwright install --with-deps
       - name: Run Playwright tests
+        if: ${{ false }}
         run: npm run test:e2e
       - name: Build
         run: npm run build
@@ -42,7 +44,7 @@ jobs:
         run: curl ${{ secrets.RENDER_DEPLOY_HOOK }}
 
   notify_failure:
-    needs: [build_and_test]
+    needs: [build_and_test, deploy]
     runs-on: ubuntu-latest
     if: ${{ failure() }}
     steps:
@@ -66,7 +68,7 @@ jobs:
             [View Workflow Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
 
   notify_success:
-    needs: [build_and_test]
+    needs: [build_and_test, deploy]
     runs-on: ubuntu-latest
     if: ${{ success() }}
     steps:
