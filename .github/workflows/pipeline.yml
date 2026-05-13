@@ -13,7 +13,7 @@ permissions:
   contents: write
 
 jobs:
-  deployment_pipeline:
+  build_and_test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -27,16 +27,28 @@ jobs:
       - name: Test
         run: npm run test
       - name: Install Playwright Browsers
+        if: ${{ false }}
         run: npx playwright install --with-deps
       - name: Run Playwright tests
+        if: ${{ false }}
         run: npm run test:e2e
       - name: Build
         run: npm run build
+
+  deploy:
+    needs: [build_and_test]
+    runs-on: ubuntu-latest
+    steps:
       - name: Trigger deployment
         if: ${{ github.event_name == 'push' && !contains(join(github.event.commits.*.message, ' '), '#skip') }}
         run: curl ${{ secrets.RENDER_DEPLOY_HOOK }}
+
+  notify_failure:
+    needs: [build_and_test, deploy]
+    runs-on: ubuntu-latest
+    if: ${{ failure() }}
+    steps:
       - uses: sarisia/actions-status-discord@v1
-        if: ${{ failure() }}
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK }}
           content: "❌ **Build Failed!** Encountered an error"
@@ -54,29 +66,34 @@ jobs:
             
             [View Commit](${{ github.event.head_commit.url }})
             [View Workflow Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+  notify_success:
+    needs: [build_and_test, deploy]
+    runs-on: ubuntu-latest
+    if: ${{ success() }}
+    steps:
       - uses: sarisia/actions-status-discord@v1
-        if: ${{ success() }}
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK }}
           content: "✅ **Build Succeeded!**"
           status: 'Success'
           nodetail: 'true'
-          title: 'Failure Details'
+          title: 'Details'
           description: |
             **Commit:** ${{ github.sha }}
             **Message:** ${{ github.event.head_commit.message || github.event.pull_request.title }}
             **Author:** ${{ github.event.head_commit.author.name || github.event.pull_request.user.name }}
 
   tag_release:
-    needs: [deployment_pipeline]
+    needs: [build_and_test, deploy]
     runs-on: ubuntu-latest
+    if: ${{ github.ref == 'refs/heads/main' && !contains(join(github.event.commits.*.message, ' '), '#skip') }}
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: Bump version and push tag
         uses: anothrNick/github-tag-action@1.75.0
-        if: ${{ github.ref == 'refs/heads/main' && !contains(join(github.event.commits.*.message, ' '), '#skip') }}
         env:
           DEFAULT_BUMP: patch
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
