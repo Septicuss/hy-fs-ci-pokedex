@@ -35,6 +35,25 @@ jobs:
       - name: Trigger deployment
         if: ${{ github.event_name == 'push' && !contains(join(github.event.commits.*.message, ' '), '#skip') }}
         run: curl ${{ secrets.RENDER_DEPLOY_HOOK }}
+      - uses: sarisia/actions-status-discord@v1
+        if: ${{ always() }}
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          content: "❌ **Build Failed!** Encountered an error"
+          title: 'Failure Details'
+          description: |
+            **Repository:** ${{ github.repository }}
+            **Branch:** ${ GITHUB_REF#refs/heads/ }
+            **Commit:** ${{ github.sha }}
+            **Message:** ${{ github.event.head_commit.message }}
+            **Author:** ${{ github.event.head_commit.author.name }}
+            **Workflow:** ${{ github.workflow }}
+            **Job:** ${{ github.job }}
+            
+            [View Commit](${{ github.event.head_commit.url }})
+            [View Workflow Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            
+            
 
   tag_release:
     needs: [deployment_pipeline]
