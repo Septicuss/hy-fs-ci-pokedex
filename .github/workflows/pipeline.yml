@@ -78,7 +78,7 @@ jobs:
           content: "✅ **Build Succeeded!**"
           status: 'Success'
           nodetail: 'true'
-          title: 'Failure Details'
+          title: 'Details'
           description: |
             **Commit:** ${{ github.sha }}
             **Message:** ${{ github.event.head_commit.message || github.event.pull_request.title }}
