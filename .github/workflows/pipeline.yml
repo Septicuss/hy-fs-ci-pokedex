@@ -40,6 +40,8 @@ jobs:
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK }}
           content: "❌ **Build Failed!** Encountered an error"
+          status: 'Failure'
+          nodetail: 'true'
           title: 'Failure Details'
           description: |
             **Repository:** ${{ github.repository }}
